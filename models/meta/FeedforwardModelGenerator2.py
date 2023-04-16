@@ -3,7 +3,7 @@ import os
 import torch
 import torch.nn as nn
 from pytorch_lightning import Trainer
-from pytorch_lightning.core.lightning import LightningModule
+from pytorch_lightning.core import LightningModule
 from ray.tune import Trainable, tune
 from ray.tune.schedulers import ASHAScheduler
 from ray.tune.search.hyperopt import HyperOptSearch
