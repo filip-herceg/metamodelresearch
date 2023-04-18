@@ -4,3 +4,4 @@ ray
 torchvision
 scikit-optimize
 pytorch-lightning
+jupyter
