@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from torch import nn
 
-from helpers.ActivationFunctionHelper import get_activation
+from utils.ActivationFunctionHelper import get_activation
 
 
 class Test(TestCase):

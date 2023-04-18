@@ -1,6 +1,6 @@
 import torch.nn as nn
 
-from helpers.ActivationFunctionHelper import get_activation
+from utils.ActivationFunctionHelper import get_activation
 
 
 class CustomModel(nn.Module):

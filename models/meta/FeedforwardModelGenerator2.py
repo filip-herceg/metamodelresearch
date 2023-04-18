@@ -250,3 +250,5 @@ def main(epoch_amount, train_loader, val_loader, test_loader):
                                     val_loader=val_loader, test_loader=test_loader,
                                     search_alg=search_alg, scheduler=scheduler)
         print(f'Test loss for trial {i + 1}: {test_loss:.4f}')
+
+#%%
