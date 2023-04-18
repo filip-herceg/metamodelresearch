@@ -5,3 +5,4 @@ torchvision
 scikit-optimize
 pytorch-lightning
 jupyter
+torch
