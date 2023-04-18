@@ -8,6 +8,7 @@ import pytorch_lightning as pl
 from utils.ActivationFunctionHelper import get_activation
 from utils.GetLayerHelper import get_layer
 
+
 class MetaModel(pl.LightningModule):
     """
     MetaModel is a class for creating a metamodel that generates and optimizes
@@ -113,10 +114,26 @@ class MetaModel(pl.LightningModule):
         return self.model
 
     def configure_optimizers(self):
+        """
+        Configure the optimizer for the MetaModel.
+
+        Returns:
+            torch.optim.Optimizer: The configured optimizer.
+        """
         optimizer = Adam(self.parameters(), lr=1e-3)
         return optimizer
 
     def training_step(self, batch, batch_idx):
+        """
+        Perform a training step for the MetaModel.
+
+        Args:
+            batch (tuple): A tuple containing input data and corresponding targets.
+            batch_idx (int): The index of the current batch.
+
+        Returns:
+            torch.Tensor: The loss for the current training step.
+        """
         inputs, targets = batch
         model = self.model
         outputs = model(inputs)
@@ -124,11 +141,22 @@ class MetaModel(pl.LightningModule):
         return loss
 
     def validation_step(self, batch, batch_idx):
+        """
+        Perform a validation step for the MetaModel.
+
+        Args:
+            batch (tuple): A tuple containing input data and corresponding targets.
+            batch_idx (int): The index of the current batch.
+
+        Returns:
+            None
+        """
         inputs, targets = batch
         model = self.model
         outputs = model(inputs)
         loss = self.loss(outputs, targets)
         self.log('val_loss', loss)
+
 
     def optimize(self):
         """
