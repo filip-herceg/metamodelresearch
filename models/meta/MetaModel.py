@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from matplotlib import pyplot as plt
 from torch.optim import Adam
 from skopt import Optimizer
 from skopt.space import Categorical, Integer
@@ -18,7 +19,7 @@ class MetaModel(pl.LightningModule):
     """
 
     def __init__(self, input_shape, output_shape, train_loader, val_loader, max_layers=5, n_calls=20,
-                 search_space=None):
+                 search_space=None, verbosity=1):
         """
         Initialize the MetaModel class.
 
@@ -38,6 +39,7 @@ class MetaModel(pl.LightningModule):
         self.val_loader = val_loader
         self.max_layers = max_layers
         self.n_calls = n_calls
+        self.verbosity = verbosity
 
         if search_space is None:
             self.search_space = self.create_layer_space(max_layers)
@@ -169,15 +171,21 @@ class MetaModel(pl.LightningModule):
         best_loss = float('inf')
         best_params = None
 
-        for _ in range(self.n_calls):
+        for i in range(self.n_calls):
             params = optimizer.ask()
             model = self.generate_model(params)
 
+            if self.verbosity >= 1:
+                print(f"Call {i+1}/{self.n_calls}")
+                print(f"Generated model: {model}")
+
             # Train and validate the model
-            trainer = pl.Trainer(max_epochs=10)
+            trainer = pl.Trainer(max_epochs=10, progress_bar_refresh_rate=(100 if self.verbosity >= 2 else 0))
             trainer.fit(self, self.train_loader, self.val_loader)
 
             val_loss = trainer.logged_metrics['val_loss'].item()
+            if self.verbosity >= 1:
+                print(f"Validation loss: {val_loss}")
 
             if val_loss < best_loss:
                 best_loss = val_loss
@@ -234,3 +242,19 @@ class MetaModel(pl.LightningModule):
         """
         criterion = nn.MSELoss()  # Change this to the appropriate loss function for your problem
         return criterion(outputs, targets)
+
+    def test_and_plot(self, test_loader):
+        best_params = self.optimize()
+        best_model = self.generate_model(best_params)
+
+        # Evaluate the best model on test data
+        test_inputs, test_targets = next(iter(test_loader))
+        test_outputs = best_model(test_inputs).detach().numpy()
+
+        # Plot test data
+        plt.scatter(test_inputs.numpy(), test_targets.numpy(), label='True')
+        plt.scatter(test_inputs.numpy(), test_outputs, label='Predicted')
+        plt.xlabel('Input')
+        plt.ylabel('Output')
+        plt.legend()
+        plt.show()
