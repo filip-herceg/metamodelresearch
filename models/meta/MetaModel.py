@@ -1,12 +1,9 @@
-import numpy as np
 import torch
 import torch.nn as nn
 from matplotlib import pyplot as plt
 from torch.optim import Adam
-from skopt.space import Categorical, Integer
+import optuna
 import pytorch_lightning as pl
-from functools import partial
-from scipy.optimize import minimize
 
 from utils.ActivationFunctionHelper import get_activation
 from utils.GetLayerHelper import get_layer
@@ -84,11 +81,10 @@ class MetaModel(pl.LightningModule):
         if layer_types is None:
             layer_types = ['linear', 'conv2d', 'maxpool2d', 'avgpool2d']
 
-        space = []
-        for i in range(num_layers):
-            space.append(Categorical(layer_types, name=f'layer_type_{i}'))
-            space.append(Integer(1, 512, name=f'layer_units_{i}'))
-            space.append(Categorical(activation_functions, name=f'activation{i}'))
+        space = {
+            'layer_types': layer_types,
+            'activation_functions': activation_functions
+        }
 
         return space
 
@@ -161,7 +157,15 @@ class MetaModel(pl.LightningModule):
         loss = self.loss(outputs, targets)
         self.log('val_loss', loss)
 
-    def objective(self, params, train_loader, val_loader):
+    def objective(self, trial):
+        params = []
+        for i in range(self.max_layers):
+            layer_type = trial.suggest_categorical(f"layer_type_{i}", self.search_space['layer_types'])
+            layer_units = trial.suggest_int(f"layer_units_{i}", 1, 512)
+            activation_name = trial.suggest_categorical(f"activation_{i}", self.search_space['activation_functions'])
+
+            params.extend([layer_type, layer_units, activation_name])
+
         model = self.generate_model(params)
 
         if self.verbosity >= 1:
@@ -169,7 +173,7 @@ class MetaModel(pl.LightningModule):
 
         # Train and validate the model
         trainer = pl.Trainer(max_epochs=10, progress_bar_refresh_rate=(100 if self.verbosity >= 2 else 0))
-        trainer.fit(self, train_loader, val_loader)
+        trainer.fit(self, self.train_loader, self.val_loader)
 
         val_loss = trainer.logged_metrics['val_loss'].item()
         if self.verbosity >= 1:
@@ -179,26 +183,18 @@ class MetaModel(pl.LightningModule):
 
     def optimize(self):
         """
-        Optimize the model's architecture.
+        Optimize the model's architecture using Optuna.
 
         Returns:
             list: The best parameters found during optimization.
         """
-        # Convert the search space to bounds for minimize function
-        bounds = [s.bounds if isinstance(s, Integer) else s.categories for s in self.search_space]
+        study = optuna.create_study(direction="minimize")
+        study.optimize(self.objective, n_trials=self.n_calls)
 
-        # Generate random initial guess
-        x0 = np.array([np.random.uniform(low=b[0], high=b[1]) if isinstance(b, tuple) else np.random.choice(b) for b in bounds])
+        best_params = study.best_params.values()
 
-        # Wrap the objective function
-        wrapped_objective = partial(self.objective, train_loader=self.train_loader, val_loader=self.val_loader)
+        return list(best_params)
 
-        # Optimize
-        result = minimize(wrapped_objective, x0=x0, bounds=bounds, method='L-BFGS-B')
-
-        best_params = result.x
-
-        return best_params
 
     def backward(self, loss, **kwargs):
         """

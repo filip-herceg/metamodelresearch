@@ -2,8 +2,8 @@ numpy~=1.24.2
 matplotlib~=3.7.1
 ray
 torchvision~=0.13.1
-scikit-optimize
 pytorch-lightning
 jupyter
 torch
-scipy~=1.10.1
+scipy
+optuna
