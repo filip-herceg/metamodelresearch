@@ -21,9 +21,17 @@ def get_activation(name, *args, **kwargs):
     """
     if name in get_available_activation_types():
         layer_class = getattr(nn, name)
-        return layer_class(*args, **kwargs)
+        if name == 'Threshold':
+            # handle the special case of the Threshold activation function, which requires additional arguments
+            threshold = kwargs.pop('threshold', 1e-6)
+            value = kwargs.pop('value', 0)
+            return layer_class(threshold, value)
+        else:
+            return layer_class(*args, **kwargs)
     else:
         raise ValueError(f"Layer type '{name}' not supported.")
+
+
 def get_available_activation_types():
     """
     Returns a list of the available layer types that can be constructed.
@@ -33,9 +41,8 @@ def get_available_activation_types():
     """
     layer_types = []
     for name, obj in inspect.getmembers(nn):
-        if inspect.isclass(obj) and issubclass(obj, nn.Module) and not name.startswith('_') and not name.endswith('Base'):
+        if inspect.isclass(obj) and issubclass(obj, nn.Module) and not name.startswith('_') and not name.endswith(
+                'Base'):
             if hasattr(activation, name):
                 layer_types.append(name)
     return layer_types
-
-
