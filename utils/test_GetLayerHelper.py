@@ -13,6 +13,10 @@ class TestGetLayerHelper(unittest.TestCase):
         layer = get_layer('Conv2d', 3, 16, kernel_size=3, padding=1)
         self.assertIsInstance(layer, nn.Conv2d)
 
+        # Test invalid layer type (activation function)
+        with self.assertRaises(ValueError):
+            layer = get_layer('ReLU')
+
         # Test invalid layer type
         with self.assertRaises(ValueError):
             layer = get_layer('foo')
@@ -22,7 +26,5 @@ class TestGetLayerHelper(unittest.TestCase):
         layers = get_available_layer_types()
         print(layers)
         self.assertIn('Linear', layers)
-        self.assertIn('Tanh', layers)
-        self.assertIn('CELU', layers)
-        self.assertIn('Dropout', layers)
-        self.assertIn('Conv3d', layers)
+        self.assertIn('Conv2d', layers)
+

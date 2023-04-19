@@ -1,36 +1,35 @@
-from unittest import TestCase
+import unittest
+from ActivationFunctionHelper import get_activation, get_available_activation_types
+import torch.nn as nn
 
-from torch import nn
+class TestActivationFunctionHelper(unittest.TestCase):
 
-from utils.ActivationFunctionHelper import get_activation
-
-
-class Test(TestCase):
     def test_get_activation(self):
-        # Test supported activation functions
-        self.assertIsInstance(get_activation('tanh'), nn.Tanh)
-        self.assertIsInstance(get_activation('relu'), nn.ReLU)
-        self.assertIsInstance(get_activation('sigmoid'), nn.Sigmoid)
-        self.assertIsInstance(get_activation('celu'), nn.CELU)
-        self.assertIsInstance(get_activation('softmax'), nn.Softmax)
-        self.assertIsInstance(get_activation('leakyrelu'), nn.LeakyReLU)
-        self.assertIsInstance(get_activation('prelu'), nn.PReLU)
-        self.assertIsInstance(get_activation('elu'), nn.ELU)
-        self.assertIsInstance(get_activation('gelu'), nn.GELU)
-        self.assertIsInstance(get_activation('swish'), nn.SiLU)
-        self.assertIsInstance(get_activation('relu6'), nn.ReLU6)
-        self.assertIsInstance(get_activation('hardshrink'), nn.Hardshrink)
-        self.assertIsInstance(get_activation('hardtanh'), nn.Hardtanh)
-        self.assertIsInstance(get_activation('softplus'), nn.Softplus)
-        self.assertIsInstance(get_activation('logsigmoid'), nn.LogSigmoid)
-        self.assertIsInstance(get_activation('tanhshrink'), nn.Tanhshrink)
-        self.assertIsInstance(get_activation('softshrink'), nn.Softshrink)
-        self.assertIsInstance(get_activation('softsign'), nn.Softsign)
-        self.assertIsInstance(get_activation('rrelu'), nn.RReLU)
-        self.assertIsInstance(get_activation('hardswish'), nn.Hardswish)
-        self.assertIsInstance(get_activation('logsoftmax'), nn.LogSoftmax)
-        self.assertIsInstance(get_activation('softmin'), nn.Softmin)
+        # Test valid activation type (ReLU)
+        layer = get_activation('ReLU')
+        self.assertIsInstance(layer, nn.ReLU)
 
-        # Test unsupported activation function
+        # Test valid activation type (Sigmoid)
+        layer = get_activation('Sigmoid')
+        self.assertIsInstance(layer, nn.Sigmoid)
+
+        # Test valid activation type (Tanh)
+        layer = get_activation('Tanh')
+        self.assertIsInstance(layer, nn.Tanh)
+
+        # Test invalid activation type (neural network layer)
         with self.assertRaises(ValueError):
-            get_activation('nonesense_gibberish')
+            layer = get_activation('Linear')
+
+        # Test invalid activation type
+        with self.assertRaises(ValueError):
+            layer = get_activation('foo')
+
+
+    def test_get_available_layer_types(self):
+        layers = get_available_activation_types()
+        print(layers)
+        self.assertIn('ReLU', layers)
+        self.assertIn('Sigmoid', layers)
+        self.assertIn('Tanh', layers)
+

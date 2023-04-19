@@ -1,6 +1,9 @@
 import torch.nn as nn
 import inspect
 
+from torch.nn.modules import activation
+
+
 def get_layer(name, *args, **kwargs):
     """
     Returns a layer module given its name and arguments.
@@ -33,5 +36,7 @@ def get_available_layer_types():
     layer_types = []
     for name, obj in inspect.getmembers(nn):
         if inspect.isclass(obj) and issubclass(obj, nn.Module) and not name.startswith('_') and not name.endswith('Base'):
-            layer_types.append(name)
+            if not hasattr(activation, name):
+                layer_types.append(name)
     return layer_types
+
