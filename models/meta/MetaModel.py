@@ -1,10 +1,12 @@
+import numpy as np
 import torch
 import torch.nn as nn
 from matplotlib import pyplot as plt
 from torch.optim import Adam
-from skopt import Optimizer
 from skopt.space import Categorical, Integer
 import pytorch_lightning as pl
+from functools import partial
+from scipy.optimize import minimize
 
 from utils.ActivationFunctionHelper import get_activation
 from utils.GetLayerHelper import get_layer
@@ -159,6 +161,21 @@ class MetaModel(pl.LightningModule):
         loss = self.loss(outputs, targets)
         self.log('val_loss', loss)
 
+    def objective(self, params, train_loader, val_loader):
+        model = self.generate_model(params)
+
+        if self.verbosity >= 1:
+            print(f"Generated model: {model}")
+
+        # Train and validate the model
+        trainer = pl.Trainer(max_epochs=10, progress_bar_refresh_rate=(100 if self.verbosity >= 2 else 0))
+        trainer.fit(self, train_loader, val_loader)
+
+        val_loss = trainer.logged_metrics['val_loss'].item()
+        if self.verbosity >= 1:
+            print(f"Validation loss: {val_loss}")
+
+        return val_loss
 
     def optimize(self):
         """
@@ -167,31 +184,19 @@ class MetaModel(pl.LightningModule):
         Returns:
             list: The best parameters found during optimization.
         """
-        optimizer = Optimizer(self.search_space)
-        best_loss = float('inf')
-        best_params = None
+        # Convert the search space to bounds for minimize function
+        bounds = [s.bounds if isinstance(s, Integer) else s.categories for s in self.search_space]
 
-        for i in range(self.n_calls):
-            params = optimizer.ask()
-            model = self.generate_model(params)
+        # Generate random initial guess
+        x0 = np.array([np.random.uniform(low=b[0], high=b[1]) if isinstance(b, tuple) else np.random.choice(b) for b in bounds])
 
-            if self.verbosity >= 1:
-                print(f"Call {i+1}/{self.n_calls}")
-                print(f"Generated model: {model}")
+        # Wrap the objective function
+        wrapped_objective = partial(self.objective, train_loader=self.train_loader, val_loader=self.val_loader)
 
-            # Train and validate the model
-            trainer = pl.Trainer(max_epochs=10, progress_bar_refresh_rate=(100 if self.verbosity >= 2 else 0))
-            trainer.fit(self, self.train_loader, self.val_loader)
+        # Optimize
+        result = minimize(wrapped_objective, x0=x0, bounds=bounds, method='L-BFGS-B')
 
-            val_loss = trainer.logged_metrics['val_loss'].item()
-            if self.verbosity >= 1:
-                print(f"Validation loss: {val_loss}")
-
-            if val_loss < best_loss:
-                best_loss = val_loss
-                best_params = params
-
-            optimizer.tell(params, val_loss)
+        best_params = result.x
 
         return best_params
 
