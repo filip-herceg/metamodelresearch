@@ -1,7 +1,7 @@
 numpy~=1.24.2
 matplotlib~=3.7.1
 ray
-torchvision~=0.13.1
+torchvision
 pytorch-lightning
 jupyter
 torch

@@ -195,7 +195,6 @@ class MetaModel(pl.LightningModule):
 
         return list(best_params)
 
-
     def backward(self, loss, **kwargs):
         """
         Backward pass through the model.
@@ -205,7 +204,7 @@ class MetaModel(pl.LightningModule):
 
         Returns:
             None
-            :param **kwargs:
+            :param loss:
         """
         loss.backward()
 
@@ -215,7 +214,6 @@ class MetaModel(pl.LightningModule):
 
         Returns:
             Iterator[nn.Parameter]: Model parameters.
-            :param **kwargs:
         """
         return self.model.parameters()
 
@@ -225,7 +223,6 @@ class MetaModel(pl.LightningModule):
 
         Returns:
             None
-            :param **kwargs:
         """
         for param in self.model.parameters():
             param.grad = None
