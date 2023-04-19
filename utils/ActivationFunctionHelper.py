@@ -1,6 +1,6 @@
 import torch.nn as nn
 
-def get_activation(name, *args, **kwargs):
+def get_activation(name, input=None, *args, **kwargs):
     activation_constructors = {
         'tanh': nn.Tanh(),
         'relu': nn.ReLU(inplace=False),
@@ -26,9 +26,11 @@ def get_activation(name, *args, **kwargs):
         'softmin': nn.Softmin(dim=None) # It's recommended to explicitly set the `dim` parameter
     }
 
-
     constructor = activation_constructors.get(name)
     if constructor is None:
         raise ValueError(f"Unsupported activation function: {name}")
 
-    return constructor(*args, **kwargs)
+    if input is not None:
+        return constructor(input, *args, **kwargs)
+    else:
+        return constructor(*args, **kwargs)

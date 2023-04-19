@@ -105,7 +105,7 @@ class MetaModel(pl.LightningModule):
             activation_name = params[i + 2]
 
             layer = get_layer(layer_type, layer_units)
-            activation = get_activation(activation_name)
+            activation = get_activation(activation_name, input=None)
 
             layers.append(layer)
             layers.append(activation)
