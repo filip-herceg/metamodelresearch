@@ -29,7 +29,11 @@ def get_layer(name, input_shape, layer_units, **kwargs):
         # Check if all required arguments are present in kwargs
         missing_args = set(layer_args['required']) - set(kwargs.keys())
         if missing_args:
-            raise ValueError(f"Layer type '{name}' is missing required arguments: {missing_args}")
+            if 'self' in missing_args and len(missing_args) == 1:
+                # Special case: if the only missing argument is 'self', set it to None
+                kwargs['self'] = None
+            else:
+                raise ValueError(f"Layer type '{name}' is missing required arguments: {missing_args}")
 
         # Use the default values for any missing optional arguments
         for arg, default_value in layer_args['optional'].items():
