@@ -104,8 +104,8 @@ class MetaModel(pl.LightningModule):
             layer_units = params[i + 1]
             activation_name = params[i + 2]
 
-            layer = get_layer(layer_type, layer_units)
-            activation = get_activation(activation_name, input=None)
+            layer = get_layer(layer_type, self.input_shape, layer_units)  # use input_shape as the first argument
+            activation = get_activation(activation_name)  # remove input argument
 
             layers.append(layer)
             layers.append(activation)
@@ -175,7 +175,7 @@ class MetaModel(pl.LightningModule):
         trainer = pl.Trainer(max_epochs=10, progress_bar_refresh_rate=(100 if self.verbosity >= 2 else 0))
         trainer.fit(self, self.train_loader, self.val_loader)
 
-        val_loss = trainer.logged_metrics['val_loss'].item()
+        val_loss = trainer.callback_metrics['val_loss'].item()  # use callback_metrics instead of logged_metrics
         if self.verbosity >= 1:
             print(f"Validation loss: {val_loss}")
 
