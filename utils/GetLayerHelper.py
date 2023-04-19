@@ -1,52 +1,37 @@
 import torch.nn as nn
+import inspect
 
 def get_layer(name, *args, **kwargs):
-    layers = {
-        'linear': nn.Linear,
-        'conv1d': nn.Conv1d,
-        'conv2d': nn.Conv2d,
-        'conv3d': nn.Conv3d,
-        'convtranspose1d': nn.ConvTranspose1d,
-        'convtranspose2d': nn.ConvTranspose2d,
-        'convtranspose3d': nn.ConvTranspose3d,
-        'maxpool1d': nn.MaxPool1d,
-        'maxpool2d': nn.MaxPool2d,
-        'maxpool3d': nn.MaxPool3d,
-        'avgpool1d': nn.AvgPool1d,
-        'avgpool2d': nn.AvgPool2d,
-        'avgpool3d': nn.AvgPool3d,
-        'batchnorm1d': nn.BatchNorm1d,
-        'batchnorm2d': nn.BatchNorm2d,
-        'batchnorm3d': nn.BatchNorm3d,
-        'instancenorm1d': nn.InstanceNorm1d,
-        'instancenorm2d': nn.InstanceNorm2d,
-        'instancenorm3d': nn.InstanceNorm3d,
-        'layernorm': nn.LayerNorm,
-        'groupnorm': nn.GroupNorm,
-        'dropout': nn.Dropout,
-        'dropout2d': nn.Dropout2d,
-        'dropout3d': nn.Dropout3d,
-        'embedding': nn.Embedding,
-        'rnn': nn.RNN,
-        'lstm': nn.LSTM,
-        'gru': nn.GRU,
-        'transformer': nn.Transformer,
-        'transformerencoder': nn.TransformerEncoder,
-        'transformerdecoder': nn.TransformerDecoder,
-        'identity': nn.Identity,
-        'pixelshuffle': nn.PixelShuffle,
-        'upsample': nn.Upsample,
-        'pad': nn.ZeroPad2d,
-        'adaptiveavgpool1d': nn.AdaptiveAvgPool1d,
-        'adaptiveavgpool2d': nn.AdaptiveAvgPool2d,
-        'adaptiveavgpool3d': nn.AdaptiveAvgPool3d,
-        'adaptivemaxpool1d': nn.AdaptiveMaxPool1d,
-        'adaptivemaxpool2d': nn.AdaptiveMaxPool2d,
-        'adaptivemaxpool3d': nn.AdaptiveMaxPool3d,
-    }
+    """
+    Returns a layer module given its name and arguments.
 
-    layer = layers.get(name)
-    if layer is None:
-        raise ValueError(f"Unsupported layer type: {name}")
+    Args:
+        name (str): The name of the layer module.
+        *args: Any additional positional arguments needed to construct the layer module.
+        **kwargs: Any additional keyword arguments needed to construct the layer module.
 
-    return layer(*args, **kwargs)
+    Returns:
+        nn.Module: An instance of the specified layer type.
+
+    Raises:
+        ValueError: If the specified layer type is not supported.
+    """
+    if name in get_available_layer_types():
+        layer_class = getattr(nn, name)
+        return layer_class(*args, **kwargs)
+    else:
+        raise ValueError(f"Layer type '{name}' not supported.")
+
+
+def get_available_layer_types():
+    """
+    Returns a list of the available layer types that can be constructed.
+
+    Returns:
+        list[str]: A list of strings representing the names of the available layer types.
+    """
+    layer_types = []
+    for name, obj in inspect.getmembers(nn):
+        if inspect.isclass(obj) and issubclass(obj, nn.Module) and not name.startswith('_') and not name.endswith('Base'):
+            layer_types.append(name)
+    return layer_types
