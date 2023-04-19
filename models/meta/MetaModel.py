@@ -5,7 +5,7 @@ from torch.optim import Adam
 import optuna
 import pytorch_lightning as pl
 
-from utils.ActivationFunctionHelper import get_activation
+from utils.ActivationFunctionHelper import get_activation, get_available_activation_types
 from utils.GetLayerHelper import get_layer, get_available_layer_types
 
 
@@ -64,7 +64,7 @@ class MetaModel(pl.LightningModule):
         state_dict = torch.load(filename)
         self.load_state_dict(state_dict)
 
-    def create_layer_space(self, num_layers, activation_functions=None):
+    def create_layer_space(self, num_layers, layer_types=None, activation_functions=None):
         """
         Create the search space for layers and activation functions.
 
@@ -76,9 +76,10 @@ class MetaModel(pl.LightningModule):
             list: A list of search space dimensions.
         """
         if activation_functions is None:
-            activation_functions = ['relu', 'sigmoid', 'tanh']
+            activation_functions = get_available_activation_types()
 
-        layer_types = get_available_layer_types(get_layer)
+        if layer_types is None:
+            layer_types = get_available_layer_types()
 
         space = {
             'layer_types': layer_types,
